@@ -17,32 +17,164 @@ class TutorialOverlay extends StatefulWidget {
   State<TutorialOverlay> createState() => _TutorialOverlayState();
 }
 
-class _TutorialOverlayState extends State<TutorialOverlay>
-    with SingleTickerProviderStateMixin {
+class _TutorialOverlayState extends State<TutorialOverlay> {
   int currentStep = 0;
-  late AnimationController _animationController;
-  late Animation<double> _glowAnimation;
 
   @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 2000),
-      vsync: this,
-    )..repeat(reverse: true);
+  Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final overlayColor = Colors.black.withOpacity(0.85);
+    final targetRect = _getTargetRect();
+    final screenSize = MediaQuery.of(context).size;
+    final step = widget.steps[currentStep];
 
-    _glowAnimation = Tween<double>(begin: 3.0, end: 8.0).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: Curves.easeInOut,
+    // Determinar la posición de la tarjeta del tutorial
+    double cardTop = 100.0;
+    if (targetRect != null) {
+      cardTop = targetRect.bottom + 20;
+      if (cardTop > screenSize.height - 200) {
+        cardTop = targetRect.top - 200;
+      }
+    }
+
+    return Material(
+      type: MaterialType.transparency,
+      child: Stack(
+        children: [
+          // Fondo oscuro
+          Container(
+            width: screenSize.width,
+            height: screenSize.height,
+            color: overlayColor,
+          ),
+
+          // Spotlight
+          if (targetRect != null)
+            Positioned.fill(
+              child: CustomPaint(
+                painter: SpotlightPainter(
+                  targetRect: targetRect,
+                  overlayColor: overlayColor,
+                ),
+              ),
+            ),
+
+          // Elemento resaltado
+          if (targetRect != null)
+            Positioned(
+              left: targetRect.left,
+              top: targetRect.top,
+              width: targetRect.width,
+              height: targetRect.height,
+              child: _buildHighlightedElement(step),
+            ),
+
+          // Tarjeta del tutorial
+          AnimatedPositioned(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            left: 20,
+            right: 20,
+            top: cardTop,
+            child: Card(
+              color: isDarkMode ? const Color(0xFF2D2D2D) : Colors.white,
+              elevation: 8,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      step.title,
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            color: isDarkMode ? Colors.white : Colors.black87,
+                            fontWeight: FontWeight.bold,
+                          ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      step.description,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: isDarkMode ? Colors.white70 : Colors.black54,
+                          ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        if (currentStep > 0)
+                          TextButton(
+                            onPressed: () {
+                              setState(() {
+                                currentStep--;
+                              });
+                            },
+                            child: Text(
+                              context
+                                  .read<LocalizationService>()
+                                  .translate('previous'),
+                            ),
+                          ),
+                        TextButton(
+                          onPressed: () {
+                            if (currentStep < widget.steps.length - 1) {
+                              setState(() {
+                                currentStep++;
+                              });
+                            } else {
+                              widget.onComplete();
+                            }
+                          },
+                          child: Text(
+                            currentStep < widget.steps.length - 1
+                                ? context
+                                    .read<LocalizationService>()
+                                    .translate('next')
+                                : context
+                                    .read<LocalizationService>()
+                                    .translate('finish'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
+  Widget _buildHighlightedElement(TutorialStep step) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
+    if (step.targetKey == null) return const SizedBox();
+
+    // Clonar el elemento original
+    final RenderBox? renderBox =
+        step.targetKey!.currentContext?.findRenderObject() as RenderBox?;
+    if (renderBox == null) return const SizedBox();
+
+    // Encontrar el widget original
+    final Widget? originalWidget =
+        (step.targetKey!.currentContext?.widget as Container?)?.child;
+    if (originalWidget == null) return const SizedBox();
+
+    // Devolver una copia del widget original
+    return Container(
+      decoration: BoxDecoration(
+        color: isDarkMode ? const Color(0xFF2D2D2D) : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: originalWidget,
+    );
   }
 
   Rect? _getTargetRect() {
@@ -52,7 +184,6 @@ class _TutorialOverlayState extends State<TutorialOverlay>
           step.targetKey!.currentContext?.findRenderObject() as RenderBox?;
       if (renderBox != null && renderBox.hasSize) {
         final Offset offset = renderBox.localToGlobal(Offset.zero);
-        // Usar las dimensiones exactas sin ajustes
         return Rect.fromLTWH(
           offset.dx,
           offset.dy,
@@ -62,190 +193,6 @@ class _TutorialOverlayState extends State<TutorialOverlay>
       }
     }
     return step.highlightArea;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final localization = context.read<LocalizationService>();
-    final targetRect = _getTargetRect();
-    final screenSize = MediaQuery.of(context).size;
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-
-    double cardTop = 100.0;
-    if (targetRect != null) {
-      if (targetRect.top > screenSize.height / 2) {
-        cardTop = targetRect.top - 200;
-      } else {
-        cardTop = targetRect.bottom + 50;
-      }
-    }
-
-    Widget buildSpotlightContent() {
-      final step = widget.steps[currentStep];
-      if (step.title.contains('Projects')) {
-        return Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.folder_outlined,
-              size: 48,
-              color: isDarkMode ? Colors.white : Colors.black,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              localization.translate('projects'),
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: isDarkMode ? Colors.white : Colors.black,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w500,
-                  ),
-            ),
-          ],
-        );
-      } else if (step.title.contains('Counters')) {
-        return Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.add_circle_outline,
-              size: 48,
-              color: isDarkMode ? Colors.white : Colors.black,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              localization.translate('counters'),
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: isDarkMode ? Colors.white : Colors.black,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w500,
-                  ),
-            ),
-          ],
-        );
-      } else if (step.title.contains('Patterns')) {
-        return Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.grid_view,
-              size: 48,
-              color: isDarkMode ? Colors.white : Colors.black,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              localization.translate('patterns'),
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: isDarkMode ? Colors.white : Colors.black,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w500,
-                  ),
-            ),
-          ],
-        );
-      }
-      return const SizedBox();
-    }
-
-    return Stack(
-      children: [
-        // Fondo negro sólido
-        Container(
-          width: screenSize.width,
-          height: screenSize.height,
-          color: Colors.black,
-        ),
-
-        // Copia del Card para el spotlight
-        if (targetRect != null)
-          Positioned(
-            left: targetRect.left,
-            top: targetRect.top,
-            width: targetRect.width,
-            height: targetRect.height,
-            child: Card(
-              elevation: 8,
-              color: isDarkMode ? const Color(0xFF2D2D2D) : Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: Colors.white,
-                    width: 2,
-                  ),
-                ),
-                child: buildSpotlightContent(),
-              ),
-            ),
-          ),
-
-        // Tarjeta del tutorial
-        AnimatedPositioned(
-          duration: const Duration(milliseconds: 400),
-          curve: Curves.easeOutCubic,
-          left: 24,
-          right: 24,
-          top: cardTop,
-          child: Card(
-            elevation: 8,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    widget.steps[currentStep].title,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    widget.steps[currentStep].description,
-                    style: Theme.of(context).textTheme.bodyLarge,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 24),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      if (currentStep > 0)
-                        TextButton.icon(
-                          onPressed: () => setState(() => currentStep--),
-                          icon: const Icon(Icons.arrow_back),
-                          label: Text(localization.translate('previous')),
-                        ),
-                      const Spacer(),
-                      TextButton.icon(
-                        onPressed: () {
-                          if (currentStep < widget.steps.length - 1) {
-                            setState(() => currentStep++);
-                          } else {
-                            widget.onComplete();
-                          }
-                        },
-                        icon: Text(
-                          currentStep < widget.steps.length - 1
-                              ? localization.translate('next')
-                              : localization.translate('finish'),
-                        ),
-                        label: const Icon(Icons.arrow_forward),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
   }
 }
 
@@ -278,4 +225,34 @@ class TutorialStep {
     this.highlightArea,
     this.targetKey,
   });
+}
+
+// Agregar esta nueva clase para el efecto de spotlight
+class SpotlightPainter extends CustomPainter {
+  final Rect targetRect;
+  final Color overlayColor;
+
+  SpotlightPainter({
+    required this.targetRect,
+    required this.overlayColor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..color = overlayColor;
+    final spotlightPath = Path()
+      ..addRect(Rect.fromLTWH(0, 0, size.width, size.height))
+      ..addRRect(RRect.fromRectAndRadius(
+        targetRect,
+        const Radius.circular(16),
+      ))
+      ..fillType = PathFillType.evenOdd;
+
+    canvas.drawPath(spotlightPath, paint);
+  }
+
+  @override
+  bool shouldRepaint(SpotlightPainter oldDelegate) =>
+      targetRect != oldDelegate.targetRect ||
+      overlayColor != oldDelegate.overlayColor;
 }

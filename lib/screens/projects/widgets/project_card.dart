@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import '../../../models/project.dart';
+import '../../../services/localization_service.dart';
+import 'package:provider/provider.dart';
 
 class ProjectCard extends StatefulWidget {
   final Project project;
@@ -102,7 +103,11 @@ class _ProjectCardState extends State<ProjectCard>
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            widget.project.description,
+                            widget.project.description.isEmpty
+                                ? context
+                                    .read<LocalizationService>()
+                                    .translate('no_description')
+                                : widget.project.description,
                             style: Theme.of(context).textTheme.bodySmall,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,

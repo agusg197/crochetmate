@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/project.dart';
 import '../../models/round.dart';
+import '../../services/pdf_service.dart';
 import 'widgets/round_list_item.dart';
 import 'widgets/project_info_card.dart';
 import 'widgets/image_carousel.dart';
@@ -9,6 +10,9 @@ import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:pdf/pdf.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:open_file/open_file.dart';
 
 class ProjectDetailScreen extends StatefulWidget {
   final Project? project;
@@ -28,11 +32,16 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
   final _yarnTypeController = TextEditingController();
   DateTime? _deadline;
 
+  final gradientColors = [
+    const Color(0xFF9C27B0), // Morado más vibrante
+    const Color(0xFFE91E63), // Rosa
+    const Color(0xFFFF9800), // Naranja cálido
+  ];
+
   @override
   void initState() {
     super.initState();
-    _project =
-        widget.project ??
+    _project = widget.project ??
         Project(
           id: DateTime.now().millisecondsSinceEpoch.toString(),
           name: '',
@@ -62,8 +71,8 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
   Future<void> _pickImages() async {
     final ImagePicker picker = ImagePicker();
     try {
-      final List<XFile>? images = await picker.pickMultiImage();
-      if (images != null && images.isNotEmpty) {
+      final List<XFile> images = await picker.pickMultiImage();
+      if (images.isNotEmpty) {
         setState(() {
           _project.images.addAll(images.map((image) => image.path));
         });
@@ -122,16 +131,57 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     }
   }
 
-  void _saveProject() {
+  Future<void> _saveProject() async {
     if (_formKey.currentState!.validate()) {
-      _project.name = _nameController.text;
-      _project.description = _descriptionController.text;
-      _project.hookSize = _hookSizeController.text;
-      _project.yarnType = _yarnTypeController.text;
-      _project.deadline = _deadline;
-      _project.updatedAt = DateTime.now();
+      final localization = context.read<LocalizationService>();
 
-      Navigator.pop(context, _project);
+      try {
+        _project.name = _nameController.text;
+        _project.description = _descriptionController.text;
+        _project.hookSize = _hookSizeController.text;
+        _project.yarnType = _yarnTypeController.text;
+        _project.deadline = _deadline;
+        _project.updatedAt = DateTime.now();
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(localization.translate('project_saved'))),
+        );
+        Navigator.pop(context, _project);
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(localization.translate('error_saving_project'))),
+        );
+      }
+    }
+  }
+
+  Future<void> _exportToPDF() async {
+    final localization = context.read<LocalizationService>();
+    try {
+      final pdfService = PDFService();
+      final filePath = await pdfService.generateProjectPDF(_project);
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(localization.translate('pdf_saved')),
+          action: SnackBarAction(
+            label: localization.translate('open'),
+            onPressed: () async {
+              await OpenFile.open(filePath);
+            },
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(localization.translate('error_exporting_pdf')),
+        ),
+      );
     }
   }
 
@@ -161,11 +211,13 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                   controller: _nameController,
                   decoration: InputDecoration(
                     labelText: localization.translate('project_name'),
+                    hintText: localization.translate('project_name_hint'),
                     border: const OutlineInputBorder(),
+                    prefixIcon: const Icon(Icons.edit),
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return localization.translate('enter_project_name');
+                      return localization.translate('required_field');
                     }
                     return null;
                   },
@@ -175,9 +227,42 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                   controller: _descriptionController,
                   decoration: InputDecoration(
                     labelText: localization.translate('description'),
+                    hintText: localization.translate('description_hint'),
                     border: const OutlineInputBorder(),
+                    prefixIcon: const Icon(Icons.description),
                   ),
                   maxLines: 3,
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _hookSizeController,
+                  decoration: InputDecoration(
+                    labelText: localization.translate('hook_size'),
+                    hintText: localization.translate('hook_size_hint'),
+                    border: const OutlineInputBorder(),
+                    prefixIcon: const Icon(Icons.straighten),
+                  ),
+                  keyboardType: TextInputType.numberWithOptions(decimal: true),
+                  validator: (value) {
+                    if (value != null && value.isNotEmpty) {
+                      final number =
+                          double.tryParse(value.replaceAll(',', '.'));
+                      if (number == null) {
+                        return localization.translate('invalid_hook_size');
+                      }
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _yarnTypeController,
+                  decoration: InputDecoration(
+                    labelText: localization.translate('yarn_type'),
+                    hintText: localization.translate('yarn_type_hint'),
+                    border: const OutlineInputBorder(),
+                    prefixIcon: const Icon(Icons.fiber_manual_record),
+                  ),
                 ),
                 const SizedBox(height: 16),
                 ProjectInfoCard(

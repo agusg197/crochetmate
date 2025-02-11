@@ -14,25 +14,28 @@ class CounterButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Material(
       color: primary
-          ? Theme.of(context).primaryColor
-          : Theme.of(context).cardColor,
-      elevation: 4,
-      borderRadius: BorderRadius.circular(50),
+          ? Theme.of(context).colorScheme.primary
+          : isDark
+              ? Theme.of(context).colorScheme.primary.withOpacity(0.8)
+              : Colors.grey[200],
+      borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: onPressed,
-        borderRadius: BorderRadius.circular(50),
+        borderRadius: BorderRadius.circular(16),
         child: Container(
           width: 80,
           height: 80,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-          ),
+          alignment: Alignment.center,
           child: Icon(
             icon,
-            size: 40,
-            color: primary ? Colors.white : Theme.of(context).primaryColor,
+            size: 32,
+            color: primary || isDark
+                ? Colors.white
+                : Theme.of(context).colorScheme.primary,
           ),
         ),
       ),

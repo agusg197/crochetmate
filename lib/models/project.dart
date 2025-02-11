@@ -1,19 +1,46 @@
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
 
 import 'round.dart';
 
-class Project {
+part 'project.g.dart';
+
+@HiveType(typeId: 0)
+class Project extends HiveObject {
+  @HiveField(0)
   final String id;
+
+  @HiveField(1)
   String name;
+
+  @HiveField(2)
   String description;
+
+  @HiveField(3)
   List<String> images;
+
+  @HiveField(4)
   List<Round> rounds;
+
+  @HiveField(5)
   ProjectStatus status;
+
+  @HiveField(6)
   DateTime createdAt;
+
+  @HiveField(7)
   DateTime? updatedAt;
+
+  @HiveField(8)
   String? notes;
+
+  @HiveField(9)
   String? hookSize; // Tamaño del gancho
+
+  @HiveField(10)
   String? yarnType; // Tipo de hilo
+
+  @HiveField(11)
   DateTime? deadline; // Fecha límite opcional
 
   Project({
@@ -60,10 +87,9 @@ class Project {
       name: json['name'],
       description: json['description'],
       images: List<String>.from(json['images']),
-      rounds:
-          (json['rounds'] as List)
-              .map((round) => Round.fromJson(round))
-              .toList(),
+      rounds: (json['rounds'] as List)
+          .map((round) => Round.fromJson(round))
+          .toList(),
       status: ProjectStatus.values.firstWhere(
         (e) => e.toString() == json['status'],
         orElse: () => ProjectStatus.inProgress,
@@ -80,7 +106,20 @@ class Project {
   }
 }
 
-enum ProjectStatus { notStarted, inProgress, completed, onHold }
+@HiveType(typeId: 1)
+enum ProjectStatus {
+  @HiveField(0)
+  notStarted,
+
+  @HiveField(1)
+  inProgress,
+
+  @HiveField(2)
+  completed,
+
+  @HiveField(3)
+  onHold
+}
 
 extension ProjectStatusExtension on ProjectStatus {
   String get displayName {

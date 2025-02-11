@@ -1,22 +1,39 @@
+import 'package:hive/hive.dart';
 import 'counter_history_item.dart';
 
-class Counter {
-  final String id;
+part 'counter.g.dart';
+
+@HiveType(typeId: 2)
+class Counter extends HiveObject {
+  @HiveField(0)
+  String id;
+
+  @HiveField(1)
   String name;
+
+  @HiveField(2)
   int count;
-  List<CounterHistoryItem> history;
-  DateTime? startTime;
-  DateTime? lastUpdateTime;
+
+  @HiveField(3)
   bool isRunning;
+
+  @HiveField(4)
+  DateTime? startTime;
+
+  @HiveField(5)
+  DateTime? lastUpdateTime;
+
+  @HiveField(6)
+  List<CounterHistoryItem> history;
 
   Counter({
     required this.id,
     required this.name,
     this.count = 0,
-    this.history = const [],
+    this.isRunning = false,
     this.startTime,
     this.lastUpdateTime,
-    this.isRunning = false,
+    this.history = const [],
   });
 
   Map<String, dynamic> toJson() {

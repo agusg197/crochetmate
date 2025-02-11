@@ -178,6 +178,11 @@ class _CounterScreenState extends State<CounterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final localization = context.read<LocalizationService>();
+    final totalDuration = _counter.startTime != null
+        ? DateTime.now().difference(_counter.startTime!)
+        : null;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(_counter.name),
@@ -207,14 +212,19 @@ class _CounterScreenState extends State<CounterScreen> {
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: Text(
-                'Tiempo vuelta actual: ${_formatDuration(_currentRoundDuration)}',
+                '${localization.translate('current_round_time')}: ${_formatDuration(_currentRoundDuration)}',
                 style: Theme.of(context).textTheme.titleMedium,
               ),
             ),
           ],
           Expanded(
             flex: 2,
-            child: CounterDisplay(count: _counter.count),
+            child: CounterDisplay(
+              count: _counter.count,
+              totalDuration: totalDuration,
+              lastRound:
+                  _counter.history.isNotEmpty ? _counter.history.first : null,
+            ),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 20),
@@ -272,23 +282,29 @@ class _NoteDialogState extends State<_NoteDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Agregar nota'),
-      content: TextField(
-        controller: _controller,
-        decoration: const InputDecoration(hintText: 'Escribe una nota...'),
-        maxLines: 3,
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancelar'),
-        ),
-        TextButton(
-          onPressed: () => Navigator.pop(context, _controller.text),
-          child: const Text('Guardar'),
-        ),
-      ],
+    return Consumer<LocalizationService>(
+      builder: (context, localization, _) {
+        return AlertDialog(
+          title: Text(localization.translate('add_note')),
+          content: TextField(
+            controller: _controller,
+            decoration: InputDecoration(
+              hintText: localization.translate('write_note'),
+            ),
+            maxLines: 3,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(localization.translate('cancel')),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, _controller.text),
+              child: Text(localization.translate('save')),
+            ),
+          ],
+        );
+      },
     );
   }
 

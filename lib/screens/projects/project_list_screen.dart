@@ -6,8 +6,7 @@ import 'widgets/project_card.dart';
 import 'project_detail_screen.dart';
 import 'package:provider/provider.dart';
 import '../../services/localization_service.dart';
-import '../../widgets/custom_refresh_indicator.dart';
-import '../../widgets/skeleton_loader.dart';
+import '../../utils/page_transitions.dart';
 
 class ProjectListScreen extends StatefulWidget {
   const ProjectListScreen({super.key});
@@ -47,12 +46,9 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
   }
 
   void _createProject() async {
-    debugPrint('Creando nuevo proyecto...');
     final result = await Navigator.push<Project>(
       context,
-      MaterialPageRoute(
-        builder: (context) => const ProjectDetailScreen(),
-      ),
+      PageTransitions.createRoute<Project>(const ProjectDetailScreen()),
     );
 
     if (result != null) {
@@ -136,12 +132,12 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            localization.translate('no_projects'),
+            localization.translate('empty_state_projects'),
             style: Theme.of(context).textTheme.titleLarge,
           ),
           const SizedBox(height: 8),
           Text(
-            localization.translate('create_project'),
+            localization.translate('create_new_project'),
             style: Theme.of(context).textTheme.bodyMedium,
           ),
         ],
@@ -197,9 +193,8 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
   void _openProject(Project project) async {
     final result = await Navigator.push<Project>(
       context,
-      MaterialPageRoute(
-        builder: (context) => ProjectDetailScreen(project: project),
-      ),
+      PageTransitions.createRoute<Project>(
+          ProjectDetailScreen(project: project)),
     );
 
     if (result != null) {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/counter.dart';
 import '../../services/counter_service.dart';
+import '../../widgets/empty_state.dart';
 import 'counter_screen.dart';
 import 'widgets/new_counter_dialog.dart';
 import 'package:provider/provider.dart';
@@ -66,7 +67,10 @@ class _CounterListScreenState extends State<CounterListScreen> {
           body: _isLoading
               ? const Center(child: CircularProgressIndicator())
               : _counters.isEmpty
-                  ? _buildEmptyState(localization)
+                  ? EmptyState(
+                      type: 'counters',
+                      onCreate: () => _createCounter(localization),
+                    )
                   : _buildCounterList(localization),
           floatingActionButton: FloatingActionButton(
             onPressed: () => _createCounter(localization),
@@ -74,31 +78,6 @@ class _CounterListScreenState extends State<CounterListScreen> {
           ),
         );
       },
-    );
-  }
-
-  Widget _buildEmptyState(LocalizationService localization) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.timer_outlined,
-            size: 64,
-            color: Colors.grey[400],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            localization.translate('no_counters'),
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            localization.translate('create_one_new'),
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
-        ],
-      ),
     );
   }
 

@@ -40,8 +40,7 @@ class _PatternDetailScreenState extends State<PatternDetailScreen> {
           id: DateTime.now().millisecondsSinceEpoch.toString(),
           name: '',
           difficulty: 'beginner',
-          content: '',
-          createdAt: DateTime.now(),
+          instructions: '',
         );
     _initializeControllers();
   }
@@ -57,15 +56,14 @@ class _PatternDetailScreenState extends State<PatternDetailScreen> {
       _pattern.name = _nameController.text;
       _pattern.description = _descriptionController.text;
       _pattern.difficulty = _difficulty;
-      _pattern.updatedAt = DateTime.now();
       Navigator.pop(context, _pattern);
     }
   }
 
   Future<void> _exportToPdf() async {
     try {
-      final pdfService = PdfService();
-      final filePath = await pdfService.exportPatternToPdf(_pattern);
+      final pdfService = PDFService();
+      final filePath = await pdfService.generatePatternPDF(_pattern);
 
       if (!mounted) return;
 
@@ -179,10 +177,10 @@ class _PatternDetailScreenState extends State<PatternDetailScreen> {
                         ),
                         const SizedBox(height: 8),
                         PatternMarkdownEditor(
-                          initialValue: _pattern.content,
+                          initialValue: _pattern.instructions,
                           onChanged: (value) {
                             setState(() {
-                              _pattern.content = value;
+                              _pattern.instructions = value;
                             });
                           },
                         ),
@@ -191,8 +189,8 @@ class _PatternDetailScreenState extends State<PatternDetailScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                if (_pattern.content.isNotEmpty)
-                  PatternMarkdownPreview(content: _pattern.content),
+                if (_pattern.instructions.isNotEmpty)
+                  PatternMarkdownPreview(content: _pattern.instructions),
               ],
             ),
           ),

@@ -1,20 +1,34 @@
-class Pattern {
-  final String id;
+import 'package:hive/hive.dart';
+
+part 'pattern.g.dart';
+
+@HiveType(typeId: 3)
+class Pattern extends HiveObject {
+  @HiveField(0)
+  String id;
+
+  @HiveField(1)
   String name;
+
+  @HiveField(2)
   String description;
+
+  @HiveField(3)
   String difficulty;
-  String content;
-  final DateTime createdAt;
-  DateTime? updatedAt;
+
+  @HiveField(4)
+  String instructions;
+
+  @HiveField(5)
+  List<String> images;
 
   Pattern({
     required this.id,
     required this.name,
     this.description = '',
-    required this.difficulty,
-    required this.content,
-    required this.createdAt,
-    this.updatedAt,
+    this.difficulty = 'beginner',
+    this.instructions = '',
+    this.images = const [],
   });
 
   Map<String, dynamic> toJson() {
@@ -23,9 +37,8 @@ class Pattern {
       'name': name,
       'description': description,
       'difficulty': difficulty,
-      'content': content,
-      'createdAt': createdAt.toIso8601String(),
-      'updatedAt': updatedAt?.toIso8601String(),
+      'instructions': instructions,
+      'images': images,
     };
   }
 
@@ -34,11 +47,9 @@ class Pattern {
       id: json['id'],
       name: json['name'],
       description: json['description'] ?? '',
-      difficulty: json['difficulty'],
-      content: json['content'],
-      createdAt: DateTime.parse(json['createdAt']),
-      updatedAt:
-          json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
+      difficulty: json['difficulty'] ?? 'beginner',
+      instructions: json['instructions'] ?? '',
+      images: List<String>.from(json['images'] ?? []),
     );
   }
 }

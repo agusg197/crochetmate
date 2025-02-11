@@ -18,20 +18,19 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late List<Animation<double>> _animations;
+class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   final GlobalKey _projectsKey = GlobalKey();
   final GlobalKey _patternsKey = GlobalKey();
   final GlobalKey _countersKey = GlobalKey();
   final GlobalKey _settingsKey = GlobalKey();
+  late AnimationController _controller;
+  late List<Animation<double>> _animations;
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 1500),
+      duration: const Duration(milliseconds: 1800),
       vsync: this,
     );
 
@@ -40,9 +39,9 @@ class _HomeScreenState extends State<HomeScreen>
       (index) => CurvedAnimation(
         parent: _controller,
         curve: Interval(
-          index * 0.2,
+          index * 0.1,
           0.6 + index * 0.1,
-          curve: Curves.easeOutBack,
+          curve: Curves.elasticOut,
         ),
       ),
     );
@@ -182,41 +181,41 @@ class _HomeScreenState extends State<HomeScreen>
                     crossAxisCount: 2,
                     mainAxisSpacing: 16,
                     crossAxisSpacing: 16,
-                    childAspectRatio: 1,
+                    childAspectRatio: 0.85,
                   ),
                   delegate: SliverChildListDelegate([
-                    Card(
+                    Container(
                       key: _projectsKey,
                       child: _buildAnimatedCard(
                         0,
-                        localization.translate('projects'),
+                        'projects',
                         Icons.work_outline,
                         () => _navigateToScreen(const ProjectListScreen()),
                       ),
                     ),
-                    Card(
+                    Container(
                       key: _patternsKey,
                       child: _buildAnimatedCard(
                         1,
-                        localization.translate('patterns'),
+                        'patterns',
                         Icons.pattern,
                         () => _navigateToScreen(const PatternListScreen()),
                       ),
                     ),
-                    Card(
+                    Container(
                       key: _countersKey,
                       child: _buildAnimatedCard(
                         2,
-                        localization.translate('counters'),
+                        'counters',
                         Icons.add_circle_outline,
                         () => _navigateToScreen(const CounterListScreen()),
                       ),
                     ),
-                    Card(
+                    Container(
                       key: _settingsKey,
                       child: _buildAnimatedCard(
                         3,
-                        localization.translate('settings'),
+                        'settings',
                         Icons.settings_outlined,
                         () => _navigateToScreen(const SettingsScreen()),
                       ),
@@ -247,8 +246,18 @@ class _HomeScreenState extends State<HomeScreen>
             Icon(icon, size: 48),
             const SizedBox(height: 16),
             Text(
-              title,
+              context.read<LocalizationService>().translate(title),
               style: Theme.of(context).textTheme.titleLarge,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _getSubtitle(title),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white70
+                        : Colors.black54,
+                  ),
               textAlign: TextAlign.center,
             ),
           ],
@@ -257,53 +266,21 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  Widget _buildMenuCard(
-      BuildContext context, IconData icon, String title, String route) {
-    return Consumer<LocalizationService>(
-      builder: (context, localization, _) {
-        String subtitle = '';
-        switch (route) {
-          case '/projects':
-            subtitle = localization.translate('manage_projects');
-            break;
-          case '/patterns':
-            subtitle = localization.translate('explore_patterns');
-            break;
-          case '/counters':
-            subtitle = localization.translate('count_rounds');
-            break;
-          case '/settings':
-            subtitle = localization.translate('customize_app');
-            break;
-        }
-
-        return Card(
-          child: InkWell(
-            onTap: () => Navigator.pushNamed(context, route),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(icon, size: 48),
-                  const SizedBox(height: 8),
-                  Text(
-                    title,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    subtitle,
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
+  String _getSubtitle(String key) {
+    switch (key) {
+      case 'projects':
+        return context.read<LocalizationService>().translate('manage_projects');
+      case 'patterns':
+        return context
+            .read<LocalizationService>()
+            .translate('explore_patterns');
+      case 'counters':
+        return context.read<LocalizationService>().translate('count_rounds');
+      case 'settings':
+        return context.read<LocalizationService>().translate('customize_app');
+      default:
+        return '';
+    }
   }
 
   Future<void> _checkAndShowTutorial() async {
@@ -337,6 +314,11 @@ class _HomeScreenState extends State<HomeScreen>
               title: localization.translate('tutorial_counters_title'),
               description: localization.translate('tutorial_counters_desc'),
               targetKey: _countersKey,
+            ),
+            TutorialStep(
+              title: localization.translate('tutorial_settings_title'),
+              description: localization.translate('tutorial_settings_desc'),
+              targetKey: _settingsKey,
             ),
           ],
           onComplete: () async {
