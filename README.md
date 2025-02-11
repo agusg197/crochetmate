@@ -39,7 +39,7 @@ A Flutter mobile application designed to help crochet enthusiasts manage their p
 ## 📱 Installation
 
 ### Download APK
-1. Visit this link: [CrochetMate APK](https://drive.google.com/file/d/1KHdz_5EWHaWGJ0dddu-72vVIE5W9Vq61/view?usp=sharing)
+1. Visit this link: [CrochetMate APK](https://drive.google.com/file/d/1EV_k6UbaG5Y-yOCvOC8_4ERX4JTvyqPK/view?usp=sharing)
 2. Download the latest APK version
 3. Follow the installation instructions below
 
